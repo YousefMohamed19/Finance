@@ -1,0 +1,34 @@
+# Everything runs locally for free: MongoDB, the API and the PWA.
+# 1. cp backend/.env.example backend/.env and fill in the secrets
+# 2. docker compose up -d --build   ->  open http://localhost:3000
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    # Not published to the host; only the backend can reach it.
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/finanse
+      CORS_ORIGIN: http://localhost:3000
+    depends_on:
+      - mongo
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        API_URL: http://backend:4000
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  mongo-data:
